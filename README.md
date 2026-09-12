@@ -1,35 +1,37 @@
 # Travel OS Copilot
 
-مساحة عمل لتخطيط السفر بمساعدة AI، بنتبنيها على الكاميرا خطوة بخطوة في سلسلة Angular و AI على قناة [@ArabicAngular](https://www.youtube.com/@ArabicAngular).
+An AI-assisted travel planning workspace, built step by step on camera for the Angular and AI series on [@ArabicAngular](https://www.youtube.com/@ArabicAngular).
 
-الشرح بالعامية المصرية والكود كله بالإنجليزي.
+Explanations are in Egyptian Arabic. All code, identifiers and file names are in English.
 
-## الفكرة
+النسخة العربية: [README.ar.md](README.ar.md)
 
-كل حلقة بتبني slice صغيرة من التطبيق وبتشرح feature واحدة في Angular بشكل واضح. التطبيق نفسه هو وسيلة التعليم، مش مجرد demo مصطنع.
+## The idea
 
-الأساس التقني المقصود:
+Each episode builds one small slice of the application and teaches one Angular feature clearly. The application itself is the teaching vehicle, not a throwaway demo.
 
-- كل الـ routes بتشترك في trip state model واحد.
-- الـ AI co-pilot بيستخدم نفس الـ six domain tools اللي المستخدم بيستخدمها: `search`, `add_stop`, `remove_stop`, `reorder_itinerary`, `edit_stop`, `get_trip_state`.
-- أي تغيير بيعمله الـ AI لازم يكون visible و reversible.
+Intended technical foundation:
 
-## الحالة الحالية
+- All routes share a single trip state model.
+- The AI co-pilot uses the same six domain tools available to the user: `search`, `add_stop`, `remove_stop`, `reorder_itinerary`, `edit_stop`, `get_trip_state`.
+- Every change the AI makes must be visible and reversible.
 
-التطبيق في أول الطريق. مفيش build شغال ولا AI متوصل ولا authentication لسه.
+## Current status
 
-أول حلقة TOS-001 محدودة على: guest demo screen ببيانات fixture و outcome واحد ظاهر على الشاشة.
+Early planning. There is no working build, no AI wired up and no authentication yet.
 
-مش داخل في TOS-001: real authentication، live travel data، AI responses، persistence، deployment.
+The first episode, TOS-001, is limited to a guest demo screen with fixture data and one visible outcome.
 
-## الحلقات
+Not in TOS-001: real authentication, live travel data, AI responses, persistence, deployment.
 
-خريطة الحلقات و scope كل واحدة في [`docs/episodes.md`](docs/episodes.md).
-تفاصيل أول حلقة في [`docs/tos-001-scope.md`](docs/tos-001-scope.md).
+## Episodes
 
-## الكود لكل حلقة
+The episode-to-route map and the scope of each one live in [`docs/episodes.md`](docs/episodes.md).
+Details for the first episode are in [`docs/tos-001-scope.md`](docs/tos-001-scope.md).
 
-كل حلقة ليها git tag بنفس رقمها، يعني `tos-001` هو بالظبط الكود اللي ظهر في الفيديو.
+## Code for each episode
+
+Every episode has a git tag with its number, so `tos-001` is exactly the code shown in that video.
 
 ```bash
 git clone https://github.com/Arigatouz/travel-os-copilot.git
@@ -39,12 +41,12 @@ npm install
 npm start
 ```
 
-الـ `main` بيكمل بعد الحلقة، فلو بتتابع فيديو معين استخدم الـ tag بتاعه.
+`main` keeps moving after each episode, so check out the matching tag when following a specific video.
 
-## التشغيل محليًا
+## Running locally
 
-الإصدارات الفعلية لـ Angular و Node بتتسجل مع أول commit للكود في `docs/versions.md`، ومش مكتوبة هنا قبل ما تتأكد من الـ `package.json` المثبت.
+The actual installed Angular and Node versions are recorded in [`docs/versions.md`](docs/versions.md) alongside the first code commit. They are deliberately not stated here before being verified against the installed `package.json`.
 
-## المساهمة
+## Contributing
 
-الريبو ده أساسًا مادة تعليمية. لو لقيت غلطة تقنية أو حاجة غير واضحة في حلقة، افتح issue وقول رقم الحلقة والدقيقة.
+This repository is primarily teaching material. If you find a technical mistake or something unclear in an episode, open an issue with the episode number and the timestamp.
