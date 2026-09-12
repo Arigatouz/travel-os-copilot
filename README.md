@@ -4,7 +4,7 @@ An AI-assisted travel planning workspace, built step by step on camera for the A
 
 Explanations are in Egyptian Arabic. All code, identifiers and file names are in English.
 
-النسخة العربية: [README.ar.md](README.ar.md)
+النسخة العربية: [README.ar.md](README.ar.project.md)
 
 ## The idea
 
