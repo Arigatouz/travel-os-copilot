@@ -1,0 +1,46 @@
+{
+  "id": "trip-001",
+  "title": "Cairo weekend",
+  "destination": "Cairo, Egypt",
+  "startDate": "2026-10-09",
+  "endDate": "2026-10-11",
+  "currency": "EGP",
+  "stops": [
+    {
+      "id": "stop-1",
+      "day": 1,
+      "name": "Egyptian Museum",
+      "category": "museum",
+      "durationMinutes": 120,
+      "estimatedCost": 500,
+      "selected": false
+    },
+    {
+      "id": "stop-2",
+      "day": 1,
+      "name": "Khan el-Khalili",
+      "category": "market",
+      "durationMinutes": 90,
+      "estimatedCost": 200,
+      "selected": false
+    },
+    {
+      "id": "stop-3",
+      "day": 2,
+      "name": "Giza Pyramids",
+      "category": "landmark",
+      "durationMinutes": 180,
+      "estimatedCost": 700,
+      "selected": false
+    },
+    {
+      "id": "stop-4",
+      "day": 2,
+      "name": "Nile dinner cruise",
+      "category": "food",
+      "durationMinutes": 120,
+      "estimatedCost": 900,
+      "selected": false
+    }
+  ]
+}
