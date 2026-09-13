@@ -1,4 +1,19 @@
-You are an expert in TypeScript, Angular, and scalable web application development. You write functional, maintainable, performant, and accessible code following Angular and TypeScript best practices.
+Travel OS Copilot — an Angular 22 teaching project built episode-by-episode for the ArabicAngular YouTube series. All routes share a single trip state model; the AI co-pilot uses the same six domain tools as the user (`search`, `add_stop`, `remove_stop`, `reorder_itinerary`, `edit_stop`, `get_trip_state`); every AI change must be visible and reversible.
+
+## Commands
+
+Package manager is `pnpm` (`angular.json` → `cli.packageManager`).
+
+```bash
+pnpm install
+pnpm start          # ng serve, http://localhost:4200
+pnpm build          # ng build
+pnpm test           # ng test (Vitest runner)
+```
+
+No watching test run: `pnpm exec ng test --watch=false`. For a single file: `pnpm exec ng test --watch=false --include='src/**/*.spec.ts'`. No lint script yet.
+
+An Angular CLI MCP server is configured in `.mcp.json` (`npx -y @angular/cli mcp`) — prefer its tools over raw `ng` invocations when available.
 
 ## TypeScript Best Practices
 
@@ -56,3 +71,14 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - Use the `providedIn: 'root'` option for singleton services
 - Prefer the `@Service` decorator over `@Injectable({providedIn: 'root'})` for new singleton services (Angular v22+)
 - Use the `inject()` function instead of constructor injection
+
+## Formatting
+
+Prettier (`printWidth: 100`, single quotes, Angular parser for `.html`) — see `.prettierrc`. Two-space indent, single quotes in `.ts` — see `.editorconfig`.
+
+## Pitfalls
+
+- **Pre-scaffold state:** `angular.json` has empty `"projects": {}` and there is no `src/` directory yet. No working build exists. Check before editing — application source may not exist yet.
+- **Episode discipline:** Work is scoped to the active episode (almost always the lowest-numbered not yet built). Do not build ahead of scope (no auth, live data, AI, persistence, or extra routes unless the current episode scope doc calls for them). Check `docs/tos-NNN-scope.md` for in-scope/out-of-scope lists.
+- **Fixtures:** `fixtures/trip.fixture.json` is the canonical sample trip (Cairo weekend, 4 stops) used by early pre-AI episodes — keep it small and readable.
+- **Version recording:** Angular/Node/npm versions must be recorded in `docs/versions.md` from real `package.json`/`node -v` output at recording time — never from memory.
