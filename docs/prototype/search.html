@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Co-Pilot · Search</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body data-route="search">
+  <div class="bg-grid"></div>
+  <div class="bg-blob blob-a"></div>
+  <div class="app">
+    <aside class="rail" id="rail"></aside>
+    <div class="workspace">
+      <header class="topbar" id="topbar"></header>
+      <main class="content">
+        <div class="split">
+          <div class="split-main"><div class="content-pad" id="searchMain"></div></div>
+          <aside class="split-aside" id="detailPanel"></aside>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div class="toast-wrap" id="toasts"></div>
+
+<script src="js/icons.js"></script>
+<script src="js/data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/shell.js"></script>
+<script>
+(function () {
+  Shell.mount({ route: 'search', crumb: 'Workspace', title: 'Destination Search' });
+  const main = document.getElementById('searchMain');
+  const panel = document.getElementById('detailPanel');
+
+  const state = { q: '', filters: new Set(), sort: 'relevance', loading: false, error: false, selected: null };
+  const params = new URLSearchParams(location.search);
+  if (params.get('q')) state.q = params.get('q');
+
+  function inTrip(name) { return TripStore.get().stops.some(s => s.name.toLowerCase() === name.toLowerCase()); }
+
+  function results() {
+    let r = DESTINATIONS.slice();
+    const q = state.q.trim().toLowerCase();
+    if (q) r = r.filter(d => (d.name + ' ' + d.region + ' ' + d.summary + ' ' + d.tags.join(' ')).toLowerCase().includes(q));
+    if (state.filters.size) r = r.filter(d => d.tags.some(t => state.filters.has(t)));
+    if (state.sort === 'popularity') r.sort((a, b) => b.popularity - a.popularity);
+    if (state.sort === 'budget') r.sort((a, b) => a.tier - b.tier);
+    return r;
+  }
+
+  function renderControls() {
+    return `
+      <div class="page-head fade-up" style="margin-bottom:18px">
+        <div>
+          <div class="kicker">// LIVE DISCOVERY</div>
+          <h1>Search</h1>
+        </div>
+        <span class="pill cyan">${icon('bolt',11)} RESOURCE-BACKED</span>
+      </div>
+      <div class="search-bar">
+        <span class="sb-ic">${icon('search',20)}</span>
+        <input class="sb-input" id="q" placeholder="Search destinations, themes, or places…" value="${state.q.replace(/"/g,'&quot;')}" autocomplete="off">
+        <button class="icon-btn" id="clearQ" title="Clear" style="${state.q?'':'display:none'}">${icon('x',16)}</button>
+      </div>
+      <div class="filter-row">
+        <div class="chips">
+          ${DEST_FILTERS.map(f => `<button class="chip ${state.filters.has(f)?'on':''}" data-f="${f}">${f}</button>`).join('')}
+        </div>
+        <div class="row" style="gap:10px;flex:none">
+          <span class="muted mono" style="font-size:10px">SORT</span>
+          <select class="input" id="sort" style="width:auto;padding:7px 30px 7px 12px">
+            <option value="relevance" ${state.sort==='relevance'?'selected':''}>Relevance</option>
+            <option value="popularity" ${state.sort==='popularity'?'selected':''}>Popularity</option>
+            <option value="budget" ${state.sort==='budget'?'selected':''}>Budget tier</option>
+          </select>
+        </div>
+      </div>`;
+  }
+
+  function card(d) {
+    const added = inTrip(d.name);
+    return `<article class="card hover dcard" data-id="${d.id}">
+      <div class="dcard-thumb" style="background:linear-gradient(140deg, hsl(${d.x*360} 70% 20%), hsl(${d.x*360+40} 75% 9%))">
+        <span class="pill solid dcard-dur">${d.duration}</span>
+        <span class="dcard-pop mono">${icon('star',11)} ${d.popularity}</span>
+        <div class="dcard-tex"></div>
+      </div>
+      <div style="padding:16px">
+        <div class="row between">
+          <h3 style="font-size:var(--text-xl)">${d.name}</h3>
+          <span class="muted mono" style="font-size:10px">${'$'.repeat(d.tier)}<span style="opacity:.3">${'$'.repeat(4-d.tier)}</span></span>
+        </div>
+        <div class="muted mono" style="font-size:11px;letter-spacing:.1em;margin:2px 0 10px">${icon('pin',11)} ${d.region.toUpperCase()}</div>
+        <p class="muted" style="font-size:13.5px;line-height:1.45;margin:0 0 12px">${d.summary}</p>
+        <div class="row wrap" style="gap:6px;margin-bottom:14px">
+          ${d.tags.map(t => `<span class="pill" style="font-size:9px">${t}</span>`).join('')}
+        </div>
+        <div class="row" style="gap:8px">
+          <button class="btn ${added?'ghost':'primary'} sm grow add-btn" data-id="${d.id}" ${added?'disabled':''}>
+            ${added?icon('check',14)+' In itinerary':icon('plus',14)+' Add to itinerary'}</button>
+          <button class="btn ghost sm inspect-btn" data-id="${d.id}" title="Inspect">${icon('eye',14)}</button>
+        </div>
+      </div>
+    </article>`;
+  }
+
+  function renderResults() {
+    if (state.loading) {
+      main.querySelector('#resultArea').innerHTML = `<div class="res-grid">${Array(6).fill(0).map(()=>`
+        <div class="card flat" style="padding:0">
+          <div class="skel" style="height:130px"></div>
+          <div style="padding:16px">
+            <div class="skel skel-line" style="width:55%;height:18px"></div>
+            <div class="skel skel-line" style="width:35%"></div>
+            <div class="skel skel-line" style="width:90%"></div>
+            <div class="skel skel-line" style="width:80%"></div>
+          </div></div>`).join('')}</div>`;
+      return;
+    }
+    if (state.error) {
+      main.querySelector('#resultArea').innerHTML = stateBlock('alert','danger','Search service unreachable','Could not fetch destination data. The resource endpoint timed out.','Retry search','retry');
+      main.querySelector('[data-act="retry"]').onclick = () => runSearch();
+      return;
+    }
+    const r = results();
+    if (!r.length) {
+      main.querySelector('#resultArea').innerHTML = stateBlock('search','violet','No destinations match','Try a broader query or clear your filters to see everything.','Clear filters','clearAll');
+      main.querySelector('[data-act="clearAll"]').onclick = () => { state.filters.clear(); state.q=''; full(); };
+      return;
+    }
+    main.querySelector('#resultArea').innerHTML = `
+      <div class="row between" style="margin-bottom:14px">
+        <span class="kicker muted">${r.length} RESULT${r.length>1?'S':''}${state.q?` · "${state.q}"`:''}</span>
+      </div>
+      <div class="res-grid">${r.map(card).join('')}</div>`;
+    wireCards();
+  }
+
+  function stateBlock(ic, color, title, msg, btn, act) {
+    return `<div class="empty-state">
+      <div class="es-ic ${color}">${icon(ic,30)}</div>
+      <h3 style="font-size:var(--text-xl)">${title}</h3>
+      <p class="muted" style="max-width:340px">${msg}</p>
+      ${btn?`<button class="btn secondary sm" data-act="${act}">${btn}</button>`:''}</div>`;
+  }
+
+  function wireCards() {
+    main.querySelectorAll('.add-btn').forEach(b => b.onclick = (e) => { e.stopPropagation(); addToTrip(b.dataset.id); });
+    main.querySelectorAll('.inspect-btn').forEach(b => b.onclick = (e) => { e.stopPropagation(); select(b.dataset.id); });
+    main.querySelectorAll('.dcard').forEach(c => c.onclick = () => select(c.dataset.id));
+  }
+
+  function addToTrip(id) {
+    const d = DESTINATIONS.find(x => x.id === id);
+    if (!d || inTrip(d.name)) return;
+    TripStore.addStop({ name: d.name, location: d.region, nights: parseInt(d.duration) || 2,
+      costTier: d.tier, x: d.x, y: d.y, status: 'suggested',
+      activities: d.highlights.slice(0, 3) }, { source: 'user' });
+    toast({ title: 'Stop added', msg: `${d.name} added to your itinerary as a suggested stop.` });
+    renderResults();
+    if (state.selected === id) select(id);
+  }
+
+  function select(id) {
+    state.selected = id;
+    const d = DESTINATIONS.find(x => x.id === id);
+    if (!d) return renderPanelEmpty();
+    const added = inTrip(d.name);
+    panel.innerHTML = `
+      <div class="detail-hero" style="background:linear-gradient(160deg, hsl(${d.x*360} 72% 22%), hsl(${d.x*360+40} 80% 8%))">
+        <div class="dcard-tex"></div>
+        <button class="icon-btn detail-close" id="closeDetail">${icon('x',16)}</button>
+        <div class="detail-hero-foot">
+          <span class="pill solid">${d.duration}</span>
+          <h2 style="font-size:var(--text-3xl);margin-top:8px">${d.name}</h2>
+          <div class="mono" style="font-size:11px;letter-spacing:.12em;color:var(--cyber-text)">${icon('pin',11)} ${d.region.toUpperCase()}</div>
+        </div>
+      </div>
+      <div style="padding:20px">
+        <div class="row wrap" style="gap:6px;margin-bottom:16px">
+          ${d.tags.map(t => `<span class="pill cyan" style="font-size:9px">${t}</span>`).join('')}
+        </div>
+        <p style="font-size:14.5px;line-height:1.6;color:var(--fg)">${d.summary}</p>
+
+        <div class="fit-box">
+          <div class="kicker" style="margin-bottom:8px">${icon('compass',12)} TRIP-FIT</div>
+          ${fitContent(d, added)}
+        </div>
+
+        <div class="kicker muted" style="margin:20px 0 10px">HIGHLIGHTS</div>
+        <div class="hl-list">${d.highlights.map(h => `<div class="hl-row">${icon('star',13)} ${h}</div>`).join('')}</div>
+
+        <div class="meta-grid">
+          ${metaCell('Best season', d.season, 'calendar')}
+          ${metaCell('Suggested stay', d.duration, 'clock')}
+          ${metaCell('Popularity', d.popularity + '/100', 'star')}
+          ${metaCell('Budget tier', '$'.repeat(d.tier), 'wallet')}
+        </div>
+
+        <div class="col" style="gap:10px;margin-top:22px">
+          <button class="btn ${added?'ghost':'primary'}" id="detailAdd" ${added?'disabled':''} style="width:100%">
+            ${added?icon('check',15)+' Already in itinerary':icon('plus',15)+' Add to itinerary'}</button>
+          <a class="btn secondary" href="copilot.html?q=${encodeURIComponent('Tell me about '+d.name+' and whether it fits my trip')}" style="width:100%">
+            ${icon('sparkles',15)} Ask AI about this</a>
+        </div>
+      </div>`;
+    panel.querySelector('#closeDetail').onclick = renderPanelEmpty;
+    const addBtn = panel.querySelector('#detailAdd');
+    if (addBtn && !added) addBtn.onclick = () => addToTrip(id);
+  }
+
+  function fitContent(d, added) {
+    const t = TripStore.get();
+    if (added) return `<p class="muted" style="font-size:13px;margin:0">${icon('check',13)} Already part of <b style="color:var(--fg)">${t.name}</b>. Open the day planner to sequence it.</p>`;
+    const sameRegion = t.stops.some(s => d.region.includes(s.location.split(',').pop().trim()) || s.location.includes('Japan') && d.region.includes('Japan'));
+    return `<p class="muted" style="font-size:13px;margin:0">
+      ${sameRegion ? icon('checkCircle',13)+' Geographically close to your current stops — low backtracking cost.'
+                   : icon('alert',13)+' Different region from your current stops — may add a long transfer.'}
+      Adding ${d.duration.split('–')[0]} nights keeps you within your ${TripStore.derived().totalDays}-day window.</p>`;
+  }
+  function metaCell(label, val, ic) {
+    return `<div class="meta-cell"><span class="muted">${icon(ic,13)}</span>
+      <div><div class="mono" style="font-size:9px;letter-spacing:.14em;color:var(--fg-dim)">${label.toUpperCase()}</div>
+      <b style="font-size:14px">${val}</b></div></div>`;
+  }
+  function renderPanelEmpty() {
+    state.selected = null;
+    const d = TripStore.derived(), t = TripStore.get();
+    panel.innerHTML = `
+      <div style="padding:22px">
+        <div class="kicker muted">SELECTION</div>
+        <div class="empty-state" style="padding:30px 0 26px">
+          <div class="es-ic cyan">${icon('eye',28)}</div>
+          <p class="muted" style="max-width:230px">Select a destination to inspect it and see how it fits your trip.</p>
+        </div>
+        <div class="divider"></div>
+        <div class="kicker muted" style="margin-bottom:12px">${icon('compass',12)} TRIP CONTEXT</div>
+        <div class="ctx-row"><span class="muted">Active trip</span><b>${t.name}</b></div>
+        <div class="ctx-row"><span class="muted">Window</span><b>${d.totalDays} days</b></div>
+        <div class="ctx-row"><span class="muted">Stops</span><b>${d.stopCount}</b></div>
+        <div class="ctx-row"><span class="muted">Est. cost</span><b>$${d.estCost.toLocaleString()}</b></div>
+        <a class="btn ghost sm" href="planner.html" style="width:100%;margin-top:16px">${icon('route',14)} Open day planner</a>
+      </div>`;
+  }
+
+  function full() {
+    main.innerHTML = renderControls() + '<div id="resultArea" style="margin-top:20px"></div>';
+    document.getElementById('q').oninput = (e) => { state.q = e.target.value; document.getElementById('clearQ').style.display = state.q?'':'none'; runSearch(); };
+    document.getElementById('clearQ').onclick = () => { state.q=''; full(); runSearch(); };
+    document.getElementById('sort').onchange = (e) => { state.sort = e.target.value; renderResults(); };
+    main.querySelectorAll('.chip').forEach(c => c.onclick = () => {
+      const f = c.dataset.f; state.filters.has(f) ? state.filters.delete(f) : state.filters.add(f);
+      c.classList.toggle('on'); renderResults();
+    });
+    renderResults();
+  }
+
+  let searchTimer;
+  function runSearch() {
+    clearTimeout(searchTimer);
+    state.loading = true; state.error = false; renderResults();
+    searchTimer = setTimeout(() => {
+      // simulate a rare error for the empty query 'fail'
+      state.loading = false;
+      state.error = state.q.trim().toLowerCase() === 'fail';
+      renderResults();
+    }, 480);
+  }
+
+  full();
+  renderPanelEmpty();
+  if (state.q) runSearch();
+  TripStore.subscribe(() => { renderResults(); if (state.selected) select(state.selected); else renderPanelEmpty(); });
+})();
+</script>
+<style>
+.search-bar { display: flex; align-items: center; gap: 12px; padding: 4px 6px 4px 16px;
+  background: var(--cyber-dark); border: 1px solid var(--border); clip-path: var(--clip-notch); transition: all var(--dur-base); }
+.search-bar:focus-within { border-color: var(--accent); box-shadow: 0 0 16px rgba(var(--accent-rgb),.22); }
+.sb-ic { color: var(--accent); display: grid; place-items: center; }
+.sb-input { flex: 1; background: none; border: none; outline: none; color: var(--fg);
+  font-family: var(--font-sans); font-size: 16px; padding: 13px 0; }
+.sb-input::placeholder { color: var(--fg-dim); }
+.filter-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; flex-wrap: wrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  padding: 7px 13px; background: var(--cyber-dark); border: 1px solid var(--border); color: var(--fg-dim);
+  cursor: pointer; clip-path: var(--clip-pill); transition: all var(--dur-base); }
+.chip:hover { color: var(--fg); border-color: var(--border-subtle); }
+.chip.on { background: rgba(var(--accent-rgb),.12); border-color: var(--accent); color: var(--accent); box-shadow: 0 0 10px rgba(var(--accent-rgb),.2); }
+.res-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.dcard { cursor: pointer; padding: 0; overflow: hidden; }
+.dcard-thumb { height: 130px; position: relative; overflow: hidden; }
+.dcard-tex { position: absolute; inset: 0; opacity: .5;
+  background-image: linear-gradient(rgba(var(--accent-rgb),.08) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--accent-rgb),.08) 1px, transparent 1px);
+  background-size: 20px 20px; }
+.dcard-dur { position: absolute; top: 10px; left: 10px; z-index: 1; }
+.dcard-pop { position: absolute; top: 12px; right: 12px; z-index: 1; font-size: 11px; color: var(--cyber-warning);
+  display: flex; align-items: center; gap: 3px; text-shadow: 0 1px 4px #000; }
+.empty-state { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; padding: 60px 20px; }
+.es-ic { width: 64px; height: 64px; display: grid; place-items: center; clip-path: var(--clip-notch);
+  background: var(--cyber-dark); border: 1px solid var(--border); }
+.es-ic.cyan { color: var(--cyber-primary); } .es-ic.violet { color: var(--cyber-accent); } .es-ic.danger { color: var(--cyber-danger); }
+.detail-hero { position: relative; height: 200px; display: flex; align-items: flex-end; }
+.detail-hero-foot { position: relative; z-index: 1; padding: 18px 20px; width: 100%;
+  background: linear-gradient(to top, rgba(10,10,15,.9), transparent); }
+.detail-close { position: absolute; top: 14px; right: 14px; z-index: 2; }
+.fit-box { margin-top: 18px; padding: 14px 16px; background: rgba(var(--accent-rgb),.06); border: 1px solid var(--border-subtle); clip-path: var(--clip-notch); }
+.hl-list { display: flex; flex-direction: column; gap: 8px; }
+.hl-row { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--fg); }
+.hl-row svg { color: var(--cyber-warning); flex: none; }
+.meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+.meta-cell { display: flex; align-items: center; gap: 10px; padding: 11px 13px; background: var(--cyber-dark); border: 1px solid var(--border); }
+.ctx-row { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+</style>
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Co-Pilot · State Gallery</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body data-route="states">
+  <div class="bg-grid"></div>
+  <div class="bg-blob blob-c"></div>
+  <div class="app">
+    <aside class="rail" id="rail"></aside>
+    <div class="workspace">
+      <header class="topbar" id="topbar"></header>
+      <main class="content">
+        <div class="content-pad" id="statesMain"></div>
+      </main>
+    </div>
+  </div>
+  <div class="toast-wrap" id="toasts"></div>
+
+<script src="js/icons.js"></script>
+<script src="js/data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/shell.js"></script>
+<script>
+(function () {
+  Shell.mount({ route: 'states', crumb: 'Finalize', title: 'State Gallery' });
+  const main = document.getElementById('statesMain');
+
+  function tile(label, color, body){ return `<div class="st-tile">
+    <div class="st-label"><span class="status-dot ${color}"></span><span class="mono">${label}</span></div>
+    <div class="st-demo">${body}</div></div>`; }
+
+  function es(ic,color,title,msg,btn){ return `<div class="es">
+    <div class="es-ic ${color}">${icon(ic,26)}</div><b>${title}</b><p class="muted">${msg}</p>
+    ${btn?`<button class="btn secondary sm">${btn}</button>`:''}</div>`; }
+
+  function skelCard(){ return `<div class="card flat" style="padding:0;overflow:hidden">
+    <div class="skel" style="height:90px"></div>
+    <div style="padding:14px"><div class="skel skel-line" style="width:60%;height:16px"></div>
+    <div class="skel skel-line" style="width:40%"></div><div class="skel skel-line" style="width:88%"></div></div></div>`; }
+
+  main.innerHTML = `
+    <div class="page-head fade-up">
+      <div><div class="kicker">// NON-HAPPY PATHS</div><h1>State Gallery</h1>
+        <p class="lede">Every loading, empty, error, and conflict state, in one place — the testable surface area that makes the app feel production-grade.</p></div>
+      <button class="btn primary" id="fireToasts">${icon('bell',15)} Fire feedback</button>
+    </div>
+
+    <div class="kicker muted st-sec">${icon('refresh',12)} LOADING & PROGRESSIVE</div>
+    <div class="st-grid">
+      ${tile('SEARCH RESULTS LOADING','warn',`<div class="mini-grid">${skelCard()}${skelCard()}</div>`)}
+      ${tile('DESTINATION DETAILS LOADING','warn',`<div class="skel" style="height:80px;margin-bottom:10px"></div><div class="skel skel-line" style="width:50%;height:16px"></div><div class="skel skel-line" style="width:80%"></div><div class="skel skel-line" style="width:70%"></div>`)}
+      ${tile('DEFERRED MAP / GALLERY','warn',`<div class="map-skel"><div class="skel" style="position:absolute;inset:0"></div><div class="ms-tag mono">${icon('map',15)} LOADING SPATIAL CONTEXT…</div></div>`)}
+      ${tile('APP SHELL HYDRATING','warn',`<div class="col" style="gap:8px"><div class="skel skel-line" style="width:30%;height:14px"></div><div class="skel" style="height:38px"></div><div class="skel" style="height:38px;width:80%"></div></div>`)}
+    </div>
+
+    <div class="kicker muted st-sec">${icon('sparkles',12)} AI & TOOL ACTIVITY</div>
+    <div class="st-grid">
+      ${tile('AI STREAMING','warn',`<div class="ai-stream"><span class="msg-av ai-av">${icon('sparkles',14)}</span>
+        <p class="ai-text">Resequencing your route to cut backtracking<span class="caret"></span></p></div>`)}
+      ${tile('TOOL EXECUTION PENDING','warn',`<div class="tool-call running"><div class="tc-head"><span class="tc-spin">${icon('refresh',13)}</span>
+        <span class="tc-name mono">reorder_itinerary</span><span class="tc-state mono">RUNNING</span></div></div>`)}
+      ${tile('ACTION COMPLETED','live',`<div class="tool-call done"><div class="tc-head"><span class="tc-spin">${icon('check',13)}</span>
+        <span class="tc-name mono">add_stop</span><span class="tc-state mono">DONE</span></div></div>
+        <div class="next-suggest" style="margin-top:10px">${icon('arrowRight',13)} <span>Osaka added to Day 9</span></div>`)}
+      ${tile('TOOL EXECUTION FAILED','idle',`<div class="tool-call" style="border-left-color:var(--cyber-danger)"><div class="tc-head"><span style="color:var(--cyber-danger)">${icon('x',13)}</span>
+        <span class="tc-name mono" style="color:var(--cyber-danger)">add_stop</span><span class="tc-state mono" style="color:var(--cyber-danger)">FAILED</span></div></div>
+        <button class="btn ghost sm" style="margin-top:10px">${icon('refresh',13)} Retry action</button>`)}
+    </div>
+
+    <div class="kicker muted st-sec">${icon('layers',12)} EMPTY STATES</div>
+    <div class="st-grid">
+      ${tile('EMPTY TRIP','idle',es('route','cyan','No trip yet','Start from search or let the co-pilot draft one for you.','Start planning'))}
+      ${tile('NO SEARCH RESULTS','idle',es('search','violet','No destinations match','Broaden your query or clear filters.','Clear filters'))}
+      ${tile('NO STOPS','idle',es('pin','cyan','Your route is empty','Add destinations to start sequencing days.','Find destinations'))}
+    </div>
+
+    <div class="kicker muted st-sec">${icon('alert',12)} ERROR & CONFLICT</div>
+    <div class="st-grid">
+      ${tile('SEARCH API FAILED','idle',es('alert','danger','Service unreachable','Could not fetch destination data. The endpoint timed out.','Retry search'))}
+      ${tile('VALIDATION ERROR','idle',`<div class="field"><label>End date <span class="req">*</span></label>
+        <input class="input error" type="text" value="2026-04-02" readonly>
+        <span class="field-error">${icon('alert',12)} Start date must come before end date.</span></div>`)}
+      ${tile('STATE CONFLICT','idle',`<div class="conflict warning">${icon('info',15)} AI changed Day 3 while you were editing it. <b style="margin-left:4px">Review</b></div>
+        <div class="row" style="gap:8px;margin-top:10px"><button class="btn ghost sm">Keep mine</button><button class="btn secondary sm">Accept AI</button></div>`)}
+      ${tile('SESSION EXPIRED','idle',es('lock','danger','Session expired','Your session timed out. Sign in to keep editing.','Sign in again'))}
+      ${tile('ROUTE ACCESS DENIED','idle',es('lock','violet','Protected route','The planner requires authentication before saving.','Sign in'))}
+      ${tile('SAVE FAILED','idle',`<div class="conflict danger">${icon('alert',15)} Could not save trip. Changes kept locally.</div>
+        <button class="btn ghost sm" style="margin-top:10px">${icon('refresh',13)} Retry save</button>`)}
+    </div>
+
+    <div class="kicker muted st-sec">${icon('bell',12)} FEEDBACK LAYER</div>
+    <div class="st-grid">
+      ${tile('SUCCESS TOAST','live',toastDemo('success','checkCircle','Stop added','Osaka added to Day 9.'))}
+      ${tile('WARNING BANNER','warn',`<div class="banner warning">${icon('alert',16)}<div><b>Stops exceed trip window</b><div class="muted" style="font-size:12px">11 nights planned, 10-day window.</div></div></div>`)}
+      ${tile('INFO / SYNC','warn',toastDemo('info','refresh','Syncing','Saving trip state to workspace…'))}
+      ${tile('UNDO AFFORDANCE','live',`<div class="banner success">${icon('check',16)}<div class="grow"><b>Stop removed</b></div><button class="btn ghost sm">${icon('undo',13)} Undo</button></div>`)}
+    </div>`;
+
+  function toastDemo(kind,ic,title,msg){ return `<div class="toast ${kind}" style="position:static;min-width:0;animation:none">
+    ${icon(ic,18)}<div><div class="t-title">${title}</div><div class="t-msg">${msg}</div></div></div>`; }
+
+  document.getElementById('fireToasts').onclick = () => {
+    toast({title:'Stop added',msg:'Osaka added to Day 9.'});
+    setTimeout(()=>toast({kind:'warning',title:'Heads up',msg:'Start date must come before end date.'}),500);
+    setTimeout(()=>toast({kind:'info',title:'Synced',msg:'Trip state saved to your workspace.'}),1000);
+    setTimeout(()=>toast({kind:'danger',title:'Save failed',msg:'Could not reach the server. Retrying…'}),1500);
+  };
+})();
+</script>
+<style>
+.st-sec { margin: 30px 0 14px; display: flex; align-items: center; gap: 8px; }
+.st-sec:first-of-type { margin-top: 8px; }
+.st-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.st-tile { background: var(--cyber-card); border: 1px solid var(--border); clip-path: var(--clip-card); overflow: hidden; }
+.st-label { display: flex; align-items: center; gap: 8px; padding: 11px 14px; border-bottom: 1px solid var(--border); background: var(--cyber-dark); }
+.st-label .mono { font-size: 10px; letter-spacing: .12em; color: var(--fg-dim); font-weight: 700; }
+.st-demo { padding: 18px; min-height: 150px; display: flex; flex-direction: column; justify-content: center; }
+.mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.es { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+.es-ic { width: 54px; height: 54px; display: grid; place-items: center; clip-path: var(--clip-notch); background: var(--cyber-dark); border: 1px solid var(--border); }
+.es-ic.cyan { color: var(--cyber-primary); } .es-ic.violet { color: var(--cyber-accent); } .es-ic.danger { color: var(--cyber-danger); }
+.es b { font-size: 15px; } .es p { font-size: 12.5px; margin: 0; max-width: 230px; }
+.map-skel { position: relative; height: 130px; overflow: hidden; }
+.ms-tag { position: absolute; bottom: 12px; left: 12px; display: flex; align-items: center; gap: 7px; font-size: 9px; letter-spacing: .12em; color: var(--fg-dim); }
+.ai-stream { display: flex; gap: 10px; align-items: flex-start; }
+.msg-av { width: 30px; height: 30px; flex: none; clip-path: var(--clip-notch); display: grid; place-items: center; }
+.ai-av { background: linear-gradient(135deg, var(--accent), var(--cyber-accent)); color: var(--cyber-black); }
+.ai-text { margin: 4px 0 0; font-size: 13.5px; line-height: 1.5; }
+.caret { display: inline-block; width: 6px; height: 14px; background: var(--accent); margin-left: 2px; vertical-align: text-bottom; animation: blink 1s step-end infinite; }
+.tool-call { background: var(--cyber-dark); border: 1px solid var(--border); border-left: 3px solid var(--cyber-warning); padding: 10px 13px; clip-path: var(--clip-notch); }
+.tool-call.done { border-left-color: var(--cyber-success); }
+.tc-head { display: flex; align-items: center; gap: 9px; }
+.tc-spin { color: var(--cyber-warning); display: grid; place-items: center; }
+.tool-call.running .tc-spin { animation: spin 1s linear infinite; }
+.tool-call.done .tc-spin { color: var(--cyber-success); }
+@keyframes spin { to { transform: rotate(360deg); } }
+.tc-name { font-size: 11.5px; font-weight: 700; color: var(--accent); flex: 1; }
+.tc-state { font-size: 9px; letter-spacing: .12em; color: var(--cyber-warning); }
+.tool-call.done .tc-state { color: var(--cyber-success); }
+.next-suggest { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--cyber-success); }
+.conflict { display: flex; align-items: center; gap: 9px; padding: 11px 13px; font-size: 13px; border: 1px solid var(--border); border-left: 3px solid var(--border); }
+.conflict.warning { border-left-color: var(--cyber-warning); color: var(--cyber-warning); }
+.conflict.danger { border-left-color: var(--cyber-danger); color: var(--cyber-danger); }
+.conflict svg { flex: none; }
+.banner { display: flex; align-items: center; gap: 11px; padding: 12px 14px; border: 1px solid var(--border); clip-path: var(--clip-notch); }
+.banner.warning { border-color: rgba(252,238,10,.3); background: rgba(252,238,10,.05); } .banner.warning svg { color: var(--cyber-warning); }
+.banner.success { border-color: rgba(5,255,161,.3); background: rgba(5,255,161,.05); } .banner.success svg { color: var(--cyber-success); }
+.banner b { font-size: 14px; }
+.field .req { color: var(--cyber-danger); }
+</style>
+</body>
+</html>

@@ -29,8 +29,3 @@ Thumbs.db
 *.log
 npm-debug.log*
 yarn-error.log*
-
-# Guides
-docs
-README.ar.project.md
-README.project.md

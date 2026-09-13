@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Co-Pilot · Sign in</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body data-route="auth" style="overflow:auto">
+  <div class="bg-grid"></div>
+  <div class="bg-blob blob-a"></div>
+  <div class="bg-blob blob-b"></div>
+  <div class="bg-blob blob-c"></div>
+  <div class="auth-shell">
+    <!-- Brand / pitch -->
+    <section class="auth-pitch scanline">
+      <a class="logo" href="index.html" style="margin-bottom:auto">
+        <div class="logo-mark">&gt;_</div>
+        <div class="logo-txt">Co-Pilot<small>TRAVEL OS</small></div>
+      </a>
+      <div>
+        <div class="kicker" style="margin-bottom:18px">&gt; _ AGENTIC TRAVEL WORKSPACE</div>
+        <h1 class="auth-h1">Plan trips with a co-pilot that <span class="gradient-text">takes action</span>.</h1>
+        <p class="auth-lede">One shared trip state. You search, build, and sequence — or hand the controls to an AI that uses the exact same tools. Not a chatbot bolted on. A real operator.</p>
+        <div class="auth-feats">
+          <div class="af"><span class="af-ic" data-icon="search" data-sz="16"></span><div><b>Live destination search</b><span>Resource-backed discovery feeds your itinerary.</span></div></div>
+          <div class="af"><span class="af-ic" data-icon="route" data-sz="16"></span><div><b>Structured itinerary builder</b><span>Typed, validated, multi-step trip planning.</span></div></div>
+          <div class="af"><span class="af-ic" data-icon="sparkles" data-sz="16"></span><div><b>Tool-driven AI co-pilot</b><span>Streaming responses with visible, reversible actions.</span></div></div>
+        </div>
+      </div>
+      <div class="auth-foot mono"><span class="status-dot live"></span> v1.0.0-stable · SSR-ready · 6 tools online</div>
+    </section>
+
+    <!-- Form -->
+    <section class="auth-form-wrap">
+      <div class="auth-card card scanline">
+        <div id="guardNote" class="guard-note" style="display:none">
+          <span data-icon="lock" data-sz="15"></span> <span>Sign in required to access the <b>protected planner</b> route.</span>
+        </div>
+        <div class="kicker muted">WELCOME BACK</div>
+        <h2 style="font-size:var(--text-3xl);margin:8px 0 4px">Sign in</h2>
+        <p class="muted" style="margin:0 0 26px;font-size:14px">Enter the workspace to continue your trip.</p>
+
+        <div class="oauth-row">
+          <button class="btn ghost oauth"><span class="ob-glyph">G</span> Google</button>
+          <button class="btn ghost oauth"><span class="ob-glyph" data-icon="terminal" data-sz="15"></span> GitHub</button>
+        </div>
+        <div class="or-line"><span>or</span></div>
+
+        <form id="authForm" class="col" style="gap:16px">
+          <div class="field">
+            <label>Email <span class="req">*</span></label>
+            <input class="input" type="email" id="email" value="ali@alidevhub.com" required>
+          </div>
+          <div class="field">
+            <label>Password <span class="req">*</span></label>
+            <input class="input" type="password" id="pass" value="••••••••••" required>
+            <span class="field-error" id="passErr" style="display:none"><span data-icon="alert" data-sz="12"></span> Incorrect credentials. Try again.</span>
+          </div>
+          <div class="row between" style="font-size:13px">
+            <label class="remember"><input type="checkbox" checked> <span class="muted">Keep me signed in</span></label>
+            <a href="#" class="link-accent">Forgot password?</a>
+          </div>
+          <button class="btn primary" type="submit" id="signinBtn" style="width:100%;margin-top:4px"><span data-icon="arrowRight" data-sz="15"></span> Enter workspace</button>
+        </form>
+        <p class="muted" style="text-align:center;font-size:13px;margin:20px 0 0">No account? <a href="#" class="link-accent">Request access</a></p>
+      </div>
+      <a class="back-link mono" href="index.html"><span data-icon="arrowLeft" data-sz="13"></span> CONTINUE AS GUEST</a>
+    </section>
+  </div>
+
+<script src="js/icons.js"></script>
+<script src="js/data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/shell.js"></script>
+<script>
+(function () {
+  // populate static-markup icon placeholders
+  document.querySelectorAll('[data-icon]').forEach(el => { el.innerHTML = icon(el.dataset.icon, +el.dataset.sz || 16); });
+  // apply theme/tweaks without rail
+  document.documentElement.classList.toggle('light', (localStorage.getItem('tcp_theme_v1')||'dark')==='light');
+  if (new URLSearchParams(location.search).get('guard')) document.getElementById('guardNote').style.display='flex';
+
+  const form = document.getElementById('authForm');
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('signinBtn');
+    btn.innerHTML = '<span style="display:inline-flex" class="spin">'+icon('refresh',15)+'</span> Authenticating…';
+    btn.disabled = true;
+    setTimeout(() => {
+      TripAuth.signIn();
+      window.location.href = 'index.html';
+    }, 900);
+  };
+})();
+</script>
+<style>
+body { display: block; }
+.auth-shell { position: relative; z-index: 1; display: grid; grid-template-columns: 1.1fr 1fr; min-height: 100vh; }
+.auth-pitch { display: flex; flex-direction: column; gap: 30px; padding: 56px 60px; border-right: 1px solid var(--border);
+  background: linear-gradient(150deg, var(--cyber-card), rgba(var(--accent-rgb),.03)); }
+.auth-h1 { font-size: clamp(2rem,3.4vw,3.2rem); line-height: 1.08; text-transform: none; letter-spacing: -0.01em;
+  color: var(--fg); font-weight: 700; margin: 0 0 18px; max-width: 12ch; }
+.auth-lede { color: var(--fg-dim); font-size: 16px; line-height: 1.6; max-width: 46ch; margin: 0 0 32px; }
+.auth-feats { display: flex; flex-direction: column; gap: 16px; }
+.af { display: flex; gap: 14px; align-items: flex-start; }
+.af-ic { width: 40px; height: 40px; flex: none; display: grid; place-items: center; clip-path: var(--clip-notch);
+  background: var(--cyber-dark); border: 1px solid var(--border-subtle); color: var(--accent); }
+.af b { display: block; font-size: 15px; } .af span { color: var(--fg-dim); font-size: 13.5px; }
+.auth-foot { font-size: 10px; letter-spacing: .14em; color: var(--fg-dim); display: flex; align-items: center; gap: 8px; }
+.auth-form-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 40px; }
+.auth-card { width: 100%; max-width: 410px; padding: 36px; clip-path: var(--clip-card); }
+.guard-note { display: flex; align-items: center; gap: 9px; padding: 11px 14px; margin-bottom: 22px; font-size: 13px;
+  background: rgba(252,238,10,.07); border: 1px solid rgba(252,238,10,.3); color: var(--cyber-warning); clip-path: var(--clip-pill); }
+.guard-note svg { flex: none; }
+.oauth-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+.oauth { justify-content: center; }
+.ob-glyph { font-family: var(--font-mono); font-weight: 700; display: inline-flex; align-items: center; }
+.or-line { display: flex; align-items: center; gap: 12px; margin: 4px 0 20px; color: var(--fg-dim); font-family: var(--font-mono); font-size: 11px; }
+.or-line::before, .or-line::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.remember { display: flex; align-items: center; gap: 7px; cursor: pointer; }
+.remember input { accent-color: var(--accent); }
+.link-accent { color: var(--accent); } .link-accent:hover { text-decoration: underline; }
+.back-link { font-size: 10px; letter-spacing: .14em; color: var(--fg-dim); display: flex; align-items: center; gap: 6px; }
+.back-link:hover { color: var(--accent); }
+.spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 880px){ .auth-shell{grid-template-columns:1fr} .auth-pitch{display:none} }
+</style>
+</body>
+</html>
