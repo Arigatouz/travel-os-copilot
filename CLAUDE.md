@@ -16,7 +16,7 @@ Intended technical foundation (the target shape, not yet all built):
 
 Read these before making non-trivial changes, in this order:
 
-1. `README.project.md` — the real project pitch and idea (note: `README.md` currently holds the generic Angular-CLI-generated boilerplate, not the project description — it was reset by `ng new`/`ng generate` at some point; `README.project.md` is the authoritative one until that's reconciled).
+1. `README.md` — the project pitch and idea. Arabic version at `README.ar.md`.
 2. `docs/episodes.md` — the episode-to-route map; each `TOS-NNN` episode closes one module of the underlying course and maps to one real feature slice.
 3. `docs/tos-001-scope.md` — exact in/out scope for the current episode (TOS-001: a guest screen showing fixture trip data, one visible outcome, nothing else).
 4. `AGENTS.md` — the Angular/TypeScript coding conventions (below).
@@ -27,7 +27,7 @@ Work is scoped to whichever episode is active, almost always the lowest-numbered
 
 Each episode is tagged in git (`tos-001`, `tos-002`, ...) matching the code shown in that video. `main` keeps moving after each episode.
 
-Angular/Node/npm versions actually installed must be recorded in `docs/versions.md` from the real `package.json`/`node -v` output at recording time — never filled in from memory. It's currently blank for TOS-001.
+Angular/Node/npm versions actually installed must be recorded in `docs/versions.md` from the real `package.json`/`node -v` output at recording time — never filled in from memory. TOS-001's row is filled; re-verify before recording if time has passed.
 
 Any Angular API claim made on camera must be verified against Angular docs or the installed package's `.d.ts` before recording — never stated from memory, per `docs/episodes.md`. This mirrors the global rule in `~/.claude/CLAUDE.md`.
 

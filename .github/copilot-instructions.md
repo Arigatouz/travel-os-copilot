@@ -18,7 +18,6 @@ The project is still early-stage: the current repo state is not a finished produ
 Relevant sources to check before making decisions:
 
 - `README.md`
-- `README.project.md`
 - `docs/episodes.md`
 - `docs/tos-001-scope.md`
 - `AGENTS.md`
